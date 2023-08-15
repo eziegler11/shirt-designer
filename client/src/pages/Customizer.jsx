@@ -1,10 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSnapshot } from 'valtio';
 
-import config from '../config/config'
-import { download } from '../assets';
-import { downloadCanvasToImage, reader } from '../config/helpers';
+import { reader } from '../config/helpers';
 
 import {
 	AIPicker,
@@ -13,7 +11,7 @@ import {
 	FilePicker,
 	Tab,
 } from '../components';
-import { EditorTabs, FilterTabs, DecalTypes } from '../config/constants';
+import { DecalTypes, EditorTabs, FilterTabs } from '../config/constants';
 import { fadeAnimation, slideAnimation } from '../config/motion';
 
 import state from '../store';
@@ -40,29 +38,45 @@ const Customizer = () => {
 			case 'filepicker':
 				return <FilePicker file={file} setFile={setFile} readFile={readFile} />;
 			case 'aipicker':
-				return <AIPicker 
-					prompt={prompt}
-					setPrompt={setPrompt}
-					generatingImg={generatingImg}
-					handleSubmit={handleSubmit}
-				/>;
+				return (
+					<AIPicker
+						prompt={prompt}
+						setPrompt={setPrompt}
+						generatingImg={generatingImg}
+						handleSubmit={handleSubmit}
+					/>
+				);
 			default:
 				return null;
 		}
 	};
 
 	const handleSubmit = async (type) => {
-		if(!prompt) return alert('Please enter a prompt');
+		if (!prompt) return alert('Please enter a prompt');
 
 		try {
-			// call our backend to generate an ai image
+			setGeneratingImg(true);
+
+			const response = await fetch('http://localhost:8080/api/v1/dalle', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					prompt,
+				}),
+			});
+
+			const data = await response.json();
+
+			handleDecals(type, `data:image/png;base64,${data.photo}`);
 		} catch (error) {
-			alert(error)
+			alert(error);
 		} finally {
 			setGeneratingImg(false);
 			setActiveEditorTab('');
 		}
-	}
+	};
 
 	const handleDecals = (type, result) => {
 		const decalType = DecalTypes[type];
@@ -92,8 +106,8 @@ const Customizer = () => {
 			return {
 				...prevState,
 				[tabName]: !prevState[tabName],
-			}
-		})
+			};
+		});
 	};
 
 	const readFile = (type) => {
@@ -134,7 +148,7 @@ const Customizer = () => {
 						<CustomButton
 							type='filled'
 							title='Go Back'
-							handleClick={() => state.intro = true}
+							handleClick={() => (state.intro = true)}
 							customStyles='w-fit px-4 py-2.5 font-bold text-sm'
 						/>
 					</motion.div>
