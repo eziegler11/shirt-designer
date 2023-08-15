@@ -1,3 +1,5 @@
+import React from 'react';
+
 import CustomButton from './CustomButton';
 
 const FilePicker = ({ file, setFile, readFile }) => {

@@ -1,6 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSnapshot } from 'valtio';
+
+import config from '../config/config'
+import { download } from '../assets';
+import { downloadCanvasToImage, reader } from '../config/helpers';
+
 import {
 	AIPicker,
 	ColorPicker,
@@ -8,7 +13,7 @@ import {
 	FilePicker,
 	Tab,
 } from '../components';
-import { EditorTabs, FilterTabs } from '../config/constants';
+import { EditorTabs, FilterTabs, DecalTypes } from '../config/constants';
 import { fadeAnimation, slideAnimation } from '../config/motion';
 
 import state from '../store';
@@ -35,11 +40,29 @@ const Customizer = () => {
 			case 'filepicker':
 				return <FilePicker file={file} setFile={setFile} readFile={readFile} />;
 			case 'aipicker':
-				return <AIPicker />;
+				return <AIPicker 
+					prompt={prompt}
+					setPrompt={setPrompt}
+					generatingImg={generatingImg}
+					handleSubmit={handleSubmit}
+				/>;
 			default:
 				return null;
 		}
 	};
+
+	const handleSubmit = async (type) => {
+		if(!prompt) return alert('Please enter a prompt');
+
+		try {
+			// call our backend to generate an ai image
+		} catch (error) {
+			alert(error)
+		} finally {
+			setGeneratingImg(false);
+			setActiveEditorTab('');
+		}
+	}
 
 	const handleDecals = (type, result) => {
 		const decalType = DecalTypes[type];
@@ -62,7 +85,15 @@ const Customizer = () => {
 			default:
 				state.isLogoTexture = true;
 				state.isFullTexture = false;
+				break;
 		}
+
+		setActiveFilterTab((prevState) => {
+			return {
+				...prevState,
+				[tabName]: !prevState[tabName],
+			}
+		})
 	};
 
 	const readFile = (type) => {
@@ -103,9 +134,9 @@ const Customizer = () => {
 						<CustomButton
 							type='filled'
 							title='Go Back'
-							handleClick={() => (state.intro = true)}
+							handleClick={() => state.intro = true}
 							customStyles='w-fit px-4 py-2.5 font-bold text-sm'
-						></CustomButton>
+						/>
 					</motion.div>
 
 					<motion.div
@@ -117,8 +148,8 @@ const Customizer = () => {
 								key={tab.name}
 								tab={tab}
 								isFilterTab
-								isActiveTab=''
-								handleClick={() => {}}
+								isActiveTab={activeFilterTab[tab.name]}
+								handleClick={() => handleActiveFilterTab(tab.name)}
 							/>
 						))}
 					</motion.div>
